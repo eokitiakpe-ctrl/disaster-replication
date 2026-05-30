@@ -1,0 +1,11 @@
+temp/
+__pycache__/
+*.pyc
+.Rhistory
+.RData
+*.aux
+*.log
+*.out
+*.toc
+.DS_Store
+*.dta.bak
