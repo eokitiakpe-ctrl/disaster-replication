@@ -1,43 +1,24 @@
-# preprocess.R
-# Reads raw data from input/, cleans, and saves to temp/
-# Part of disaster-replication pipeline
-# Ese Okitiakpe, GSE 552, Spring 2026
-
 library(haven)
-library(tidyverse)
+library(dplyr)
+library(readr)
 
-# All paths relative to repository root
-input_dir <- "input"
-temp_dir  <- "temp"
+dir.create("temp", showWarnings = FALSE)
 
-# Create temp/ if it doesn't exist
-dir.create(temp_dir, showWarnings = FALSE)
+df <- read_dta("input/disaster_macro_V2_by_event.dta")
 
-# Load main disaster dataset
-disaster <- read_dta(file.path(input_dir, "disaster_macro.dta"))
+df_fig1 <- df %>%
+  arrange(wbcode, id, year) %>%
+  group_by(wbcode, id) %>%
+  mutate(
+    killed_pop = killed / lag(pop) * 1000000
+  ) %>%
+  ungroup() %>%
+  filter(disaster == 1)
 
-# Keep relevant variables
-disaster <- disaster %>%
-  select(wbcode, year, country, tot, LargeDisaster) %>%
-  filter(!is.na(year)) %>%
-  filter(year >= 1970 & year <= 2007)
+write_csv(df_fig1, "temp/fig1_event_data.csv")
 
-# Collapse to year level
-clean_data <- disaster %>%
-  group_by(year) %>%
-  summarise(
-    total_events = sum(tot, na.rm = TRUE),
-    large_events = sum(LargeDisaster, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Save to temp/
-write_csv(clean_data, file.path(temp_dir, "clean_data.csv"))
-
-# Console summary
-cat("===== Preprocessing Summary =====\n")
-cat("Sample size:", nrow(clean_data), "year-level observations\n")
-cat("Year range:", min(clean_data$year), "to", max(clean_data$year), "\n")
-cat("Mean total events per year:", round(mean(clean_data$total_events), 2), "\n")
-cat("Mean large events per year:", round(mean(clean_data$large_events), 2), "\n")
-cat("=================================\n")
+cat("Preprocessing complete\n")
+cat("======================\n")
+cat("Rows:", nrow(df_fig1), "\n")
+cat("Years:", min(df_fig1$year, na.rm = TRUE), "-", max(df_fig1$year, na.rm = TRUE), "\n")
+cat("Mean killed_pop:", round(mean(df_fig1$killed_pop, na.rm = TRUE), 4), "\n")

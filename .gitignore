@@ -9,3 +9,4 @@ __pycache__/
 *.toc
 .DS_Store
 *.dta.bak
+*.dta
